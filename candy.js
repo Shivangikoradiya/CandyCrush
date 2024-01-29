@@ -13,21 +13,55 @@ var playerScore = 0;
 var currentTile;
 var targetTile;
 
-// Function to randomly select a candy color
-function getRandomCandyColor() {
-    return candyColors[Math.floor(Math.random() * candyColors.length)];
+
+
+// Initialize the game when the window loads
+window.onload = function() {
+    initializeGame();
+
+    // Every 1/10th of a second, perform crushing, sliding, and candy generation
+    window.setInterval(function() {
+        crushCandies();
+        slideCandies();
+        generateCandies();
+    }, 100);
 }
+
+// window.onload = function() {
+//     // Call the function to initialize the game
+//     initializeGame();
+
+//     // Call the function to crush candies
+//     crushCandies();
+
+//     // Call the function to slide candies
+//     slideCandies();
+
+//     // Call the function to generate candies
+//     generateCandies();
+// };
 
 // Function to initialize the game
 function initializeGame() {
+    // Loop through each row
     for (let r = 0; r < numRows; r++) {
         let rowTiles = [];
+        // Loop through each column in the current row
         for (let c = 0; c < numColumns; c++) {
+            // Create a new image element (tile)
             let tile = document.createElement("img");
+            // Assign a unique identifier (ID) to the tile based on its row and column
             tile.id = r.toString() + "-" + c.toString();
+            
+            // Log the ID of the tile to the console (for debugging purposes)
+            // console.log(tile.id);
+            
+            // Assign a random candy color image to the tile
             tile.src = "./images/" + getRandomCandyColor() + ".png";
 
-            // Adding drag functionality
+            console.log(getRandomCandyColor());
+
+            // Adding drag functionality to the tile
             tile.addEventListener("dragstart", startDragging);
             tile.addEventListener("dragover", dragOver);
             tile.addEventListener("dragenter", dragEnter);
@@ -35,14 +69,27 @@ function initializeGame() {
             tile.addEventListener("drop", dropTile);
             tile.addEventListener("dragend", endDragging);
 
+            // Append the tile to the game board container in the HTML document
             document.getElementById("board").append(tile);
+            
+            // Push the tile to the current row's array of tiles
             rowTiles.push(tile);
         }
+        // Push the array of tiles for the current row to the game board array
         gameBoard.push(rowTiles);
     }
 
+    // Log the game board array to the console (for debugging purposes)
     console.log(gameBoard);
 }
+
+
+// Function to randomly select a candy color
+function getRandomCandyColor() {
+    return candyColors[Math.floor(Math.random() * candyColors.length)];
+}
+
+
 
 // Function called when a tile is clicked and dragged
 function startDragging() {
@@ -96,19 +143,29 @@ function endDragging() {
     // Check if any of the above conditions are true (i.e., the target tile is adjacent to the current tile)
     let isAdjacent = moveLeft || moveRight || moveUp || moveDown;
 
-
     if (isAdjacent) {
+        // Store the current and target tile images
         let currentImg = currentTile.src;
         let targetImg = targetTile.src;
+    
+        // Swap the images of the current and target tiles
         currentTile.src = targetImg;
         targetTile.src = currentImg;
-
+    
+        // Check if the move results in a valid game state
         let validMove = checkValidMoves();
-        if (!validMove) {
+        if (validMove) {
+            // If the move is valid, crush the candies and slide them
+            crushCandies();
+            slideCandies();
+        } else {
+            // If the move is not valid, revert the tile images back to their original state
+            console.log("Your move is invalid");
             currentTile.src = currentImg;
             targetTile.src = targetImg;
         }
     }
+    
 }
 
 // Function to check if there are any valid moves on the board
@@ -119,7 +176,7 @@ function checkValidMoves() {
             let candy1 = gameBoard[r][c];
             let candy2 = gameBoard[r][c + 1];
             let candy3 = gameBoard[r][c + 2];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
+            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank") && !candy2.src.includes("blank") && !candy3.src.includes("blank")){
                 return true;
             }
         }
@@ -131,7 +188,7 @@ function checkValidMoves() {
             let candy1 = gameBoard[r][c];
             let candy2 = gameBoard[r + 1][c];
             let candy3 = gameBoard[r + 2][c];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
+            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank") && !candy2.src.includes("blank") && !candy3.src.includes("blank")) {
                 return true;
             }
         }
@@ -154,7 +211,7 @@ function crushThreeCandies() {
             let candy1 = gameBoard[r][c];
             let candy2 = gameBoard[r][c + 1];
             let candy3 = gameBoard[r][c + 2];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
+            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank") && !candy2.src.includes("blank") && !candy3.src.includes("blank")){
                 candy1.src = "./images/blank.png";
                 candy2.src = "./images/blank.png";
                 candy3.src = "./images/blank.png";
@@ -169,7 +226,7 @@ function crushThreeCandies() {
             let candy1 = gameBoard[r][c];
             let candy2 = gameBoard[r + 1][c];
             let candy3 = gameBoard[r + 2][c];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
+            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank") && !candy2.src.includes("blank") && !candy3.src.includes("blank")){
                 candy1.src = "./images/blank.png";
                 candy2.src = "./images/blank.png";
                 candy3.src = "./images/blank.png";
@@ -181,20 +238,29 @@ function crushThreeCandies() {
 
 // Function to slide candies downwards when there are empty spaces
 function slideCandies() {
+    // Loop through each column
     for (let c = 0; c < numColumns; c++) {
+        // Start the index from the bottom row
         let index = numRows - 1;
-        for (let r = numColumns - 1; r >= 0; r--) {
+        
+        // Iterate from the bottom row to the top row
+        for (let r = numRows - 1; r >= 0; r--) {
+            // Check if the current tile is not a "blank" tile
             if (!gameBoard[r][c].src.includes("blank")) {
+                // If the tile is not "blank", move it to the bottommost empty space
                 gameBoard[index][c].src = gameBoard[r][c].src;
+                // Decrement the index to move to the next row upwards
                 index -= 1;
             }
         }
 
+        // Fill the remaining empty spaces at the top with "blank" tiles
         for (let r = index; r >= 0; r--) {
             gameBoard[r][c].src = "./images/blank.png";
         }
     }
 }
+
 
 // Function to generate new candies at the top of the board
 function generateCandies() {
@@ -203,16 +269,4 @@ function generateCandies() {
             gameBoard[0][c].src = "./images/" + getRandomCandyColor() + ".png";
         }
     }
-}
-
-// Initialize the game when the window loads
-window.onload = function() {
-    initializeGame();
-
-    // Every 1/10th of a second, perform crushing, sliding, and candy generation
-    window.setInterval(function() {
-        crushCandies();
-        slideCandies();
-        generateCandies();
-    }, 100);
 }
